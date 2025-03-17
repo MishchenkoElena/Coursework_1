@@ -1,57 +1,30 @@
-import pytest
+import json
+
 import pandas as pd
-import logging
-from pathlib import Path
-from typing import List, Dict, Any
-from src.services import read_transactions_from_excel
+import pytest
+
+from src.services import investment_bank, read_transactions_from_excel
 
 
-@pytest.fixture
-def test_data():
-    return {
-        "Дата": ["2023-01-01", "2023-01-02"],
-        "Сумма": [100, 200],
-        "Описание": ["Оплата", "Возврат"]
-    }
-
-
-@pytest.fixture
-def test_file(test_data, tmp_path):
-    test_file = tmp_path / "test_transactions.xlsx"
-    df = pd.DataFrame(test_data)
-    df.to_excel(test_file, index=False)
-    yield test_file
-    test_file.unlink()
-
-
+# Тест чтения корректного Excel файла
 def test_read_valid_excel(test_file):
-    """Тест чтения валидного Excel файла"""
     transactions = read_transactions_from_excel(test_file)
 
     assert isinstance(transactions, list)
     assert isinstance(transactions[0], dict)
-    assert len(transactions) == 2
-    assert transactions[0]["Дата"] == "2023-01-01"
-    assert transactions[0]["Сумма"] == 100
+    assert len(transactions) == 18
+    assert transactions[0]["Дата операции"] == "01.01.2025 00:00:00"
+    assert transactions[0]["Сумма операции"] == 100
 
 
+# Тест обработки ошибки отсутствия файла
 def test_file_not_found():
-    """Тест обработки ошибки отсутствия файла"""
     with pytest.raises(FileNotFoundError):
         read_transactions_from_excel("non_existent_file.xlsx")
 
 
-# def test_invalid_excel_format(tmp_path):
-#     """Тест обработки некорректного формата Excel"""
-#     invalid_file = tmp_path / "invalid.txt"
-#     invalid_file.write_text("Это не Excel файл")
-#
-#     with pytest.raises(pd.errors.ParserError):
-#         read_transactions_from_excel(invalid_file)
-
-
+# Тест чтения пустого Excel файла
 def test_empty_excel_file(tmp_path):
-    """Тест чтения пустого Excel файла"""
     empty_file = tmp_path / "empty.xlsx"
     pd.DataFrame().to_excel(empty_file, index=False)
 
@@ -59,15 +32,74 @@ def test_empty_excel_file(tmp_path):
     assert len(transactions) == 0
 
 
-# Дополнительные проверки
-def test_return_type(test_file):
-    transactions = read_transactions_from_excel(test_file)
-    assert isinstance(transactions, list)
-    assert all(isinstance(item, dict) for item in transactions)
+# Базовый тест с валидными данными
+def test_investment_bank_valid(valid_transactions):
+    month = "2025-03"
+    limit = 50
+    expected_result = {"Месяц": "2025-03", "Лимит округления": 50, "Общая сумма накоплений за месяц": 139.00}
+
+    result = investment_bank(month, valid_transactions, limit)
+    assert json.loads(result) == expected_result
 
 
-def test_data_integrity(test_file):
-    transactions = read_transactions_from_excel(test_file)
-    expected_keys = {"Дата", "Сумма", "Описание"}
-    for transaction in transactions:
-        assert set(transaction.keys()) == expected_keys
+# Тест с некорректным форматом месяца
+def test_investment_bank_invalid_month():
+    month = "2025/03"
+    limit = 50
+    transactions = []
+
+    with pytest.raises(ValueError, match="Неверный формат данных"):
+        investment_bank(month, transactions, limit)
+
+
+# Тест с пустым списком транзакций
+def test_investment_bank_empty_transactions():
+    month = "2025-03"
+    limit = 50
+    transactions = []
+
+    expected_result = {"Месяц": "2025-03", "Лимит округления": 50, "Общая сумма накоплений за месяц": 0.00}
+
+    result = investment_bank(month, transactions, limit)
+    assert json.loads(result) == expected_result
+
+
+# Тест с некорректной датой
+def test_investment_bank_invalid_transactions():
+    month = "2025-03"
+    limit = 50
+    transactions = [{"Неверная_дата": "20.03.2025 12:00:00", "Сумма операции": -1712.00}]
+
+    with pytest.raises(KeyError):
+        investment_bank(month, transactions, limit)
+
+
+# Тест с транзакциями из месяца, отсутствующего в списке транзакций
+def test_investment_bank_different_month(valid_transactions):
+    month = "2025-04"
+    limit = 50
+
+    expected_result = {"Месяц": "2025-04", "Лимит округления": 50, "Общая сумма накоплений за месяц": 0.00}
+
+    result = investment_bank(month, valid_transactions, limit)
+    assert json.loads(result) == expected_result
+
+
+# Тест с нулевым лимитом
+def test_investment_bank_zero_limit():
+    month = "2025-03"
+    limit = 0
+    transactions = []
+
+    with pytest.raises(ValueError) as exc_info:
+        investment_bank(month, transactions, limit)
+    assert str(exc_info.value) == "Лимит округления должен быть больше 0"
+
+
+def test_investment_bank_negative_limit():
+    month = "2025-03"
+    limit = -50
+    transactions = []
+
+    with pytest.raises(ValueError, match="Лимит округления должен быть больше 0"):
+        investment_bank(month, transactions, limit)

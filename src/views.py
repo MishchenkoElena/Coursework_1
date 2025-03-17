@@ -19,7 +19,3 @@ def home_page(date_string):
         "stock_prices": get_stock_prices(user_settings_file),
     }
     print(json.dumps(response, ensure_ascii=False, indent=4))
-
-# if __name__ == "__main__":
-#     result1 = home_page("2021-10-31 23:59:59")
-#     print(result1)

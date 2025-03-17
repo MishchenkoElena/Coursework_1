@@ -1,4 +1,4 @@
-from typing import Any
+import logging
 
 import pandas as pd
 
@@ -7,29 +7,66 @@ from src.services import investment_bank, read_transactions_from_excel
 from src.views import home_page
 
 
-def main() -> Any:
-    """Функция для запуска функциональностей всего проекта"""
-    print("Функция для запуска всего проекта")
+def main():
+    """
+    Основная функция для запуска всех модулей проекта
+    """
+    logging.basicConfig(level=logging.INFO)
+
+    try:
+        # 1. Главная страница
+        run_home_page()
+
+        # 2. Сервис инвестиционной копилки
+        run_investment_bank()
+
+        # 3. Отчеты по категориям
+        run_category_reports()
+
+    except Exception as e:
+        logging.error(f"Произошла ошибка: {e}")
+        raise
+
+
+def run_home_page():
+    logging.info("Запуск модуля ГЛАВНАЯ")
+    date_string = input('Введите дату в формате "YYYY-MM-DD HH:MM:SS": ')
+    result = home_page(date_string)
+    print(f"\nРезультат расчета накоплений: {result}\n")
+
+
+def run_investment_bank():
+    logging.info("Запуск модуля СЕРВИСЫ.ИНВЕСТКОПИЛКА")
+    month = input('Введите месяц в формате "YYYY-MM": ')
+    limit = get_valid_limit()
+    transactions = read_transactions_from_excel("data/operations.xlsx")
+    result = investment_bank(month, transactions, limit)
+    print(f"\nРезультат расчета накоплений: {result}\n")
+
+
+def run_category_reports():
+    logging.info("Запуск модуля ОТЧЕТЫ.ТРАТЫ ПО КАТЕГОРИЯМ")
+    category = input("Выберите категорию для расчета трат за 3 месяца: ").lower()
+    end_date = input('Введите конечную дату периода в формате "YYYY-MM-DD": ')
+    transactions_df = pd.read_excel("data/operations.xlsx")
+    result = spending_by_category(transactions_df, category, end_date)
+    print(f"\nОтчет по тратам: {result}\n")
+
+
+def get_valid_limit() -> int:
+    """
+    Валидация ввода для предела округления
+    """
+    while True:
+        try:
+            limit = int(input("Введите предел округления (10, 50 или 100): "))
+            if limit in [10, 50, 100]:
+                return limit
+            else:
+                print("Пожалуйста, введите допустимое значение (10, 50 или 100)")
+        except ValueError:
+            print("Пожалуйста, введите число")
 
 
 if __name__ == "__main__":
-    print("\nГЛАВНАЯ\n")
-    date_string = input('Введите дату в формате "YYYY-MM-DD HH:MM:SS" для расчета накоплений:\n')
-    result = home_page(date_string)
-    print(result)
-
-    print("\nСЕРВИСЫ.ИНВЕСТКОПИЛКА\n")
-    month = input('Введите месяц  в формате "ГГГГ-MM" для расчета накоплений:\n')
-    limit = int(input("Введите предел, до которого нужно округлять суммы операций (10, 50 или 100):\n"))
-    input_file = "data/operations.xlsx"
-    transactions = read_transactions_from_excel(input_file)
-    result = investment_bank(month, transactions, limit)
-    print(result)
-
-    print("\nОТЧЕТЫ.ТРАТЫ ПО КАТЕГОРИЯМ\n")
-    input_file = "data/operations.xlsx"
-    category = input("Выберите категорию для расчета суммы трат за 3 месяца:\n").lower()
-    date = input('Введите дату окончания периода для анализа трат по категории в формате "ГГГГ-ММ-ДД":\n')
-    transactions_df = pd.read_excel(input_file)
-    result = spending_by_category(transactions_df, category, date)
-    print(result)
+    main()
