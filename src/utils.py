@@ -96,7 +96,7 @@ def convert_to_rubles(df):
     df_converted = df.copy()  # Создаем копию DataFrame для избежания изменений оригинала
     df_converted.loc[df_converted["Валюта платежа"] != "RUB", "Сумма платежа"] = df_converted[
         df_converted["Валюта платежа"] != "RUB"
-        ].apply(lambda row: row["Сумма платежа"] * get_exchange_rate(row["Валюта платежа"]), axis=1)
+    ].apply(lambda row: row["Сумма платежа"] * get_exchange_rate(row["Валюта платежа"]), axis=1)
 
     df_converted["Валюта платежа"] = "RUB"  # Оставляем только рубли в столбце валюты
 

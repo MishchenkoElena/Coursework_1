@@ -1,5 +1,4 @@
 import json
-import os
 import logging
 from datetime import datetime
 from typing import Any, Dict, List
@@ -72,10 +71,3 @@ def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) 
     except ValueError as e:
         logging.error(f"Ошибка при обработке данных: {e}")
         raise ValueError("Неверный формат данных")
-
-# # Пример использования
-# if __name__ == "__main__":
-#     input_file = os.path.abspath('../data/operations.xlsx')
-#     transactions = read_transactions_from_excel(input_file)
-#     result = investment_bank("2021-10", transactions, 50)
-#     print(result)

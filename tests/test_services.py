@@ -1,18 +1,12 @@
-import pytest
 import pandas as pd
-import logging
-from pathlib import Path
-from typing import List, Dict, Any
+import pytest
+
 from src.services import read_transactions_from_excel
 
 
 @pytest.fixture
 def test_data():
-    return {
-        "Дата": ["2023-01-01", "2023-01-02"],
-        "Сумма": [100, 200],
-        "Описание": ["Оплата", "Возврат"]
-    }
+    return {"Дата": ["2023-01-01", "2023-01-02"], "Сумма": [100, 200], "Описание": ["Оплата", "Возврат"]}
 
 
 @pytest.fixture

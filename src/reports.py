@@ -61,7 +61,7 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
             & (transactions["Категория"].str.lower() == category.lower())
             & (transactions["Дата операции"] >= date_start)
             & (transactions["Дата операции"] <= date_end)
-            ]
+        ]
         logging.debug(f"Данные отфильтрованы за период c {date_start} по {date_end}")
 
         category_spending = transactions.groupby("Категория")["Сумма операции"].sum().abs().reset_index()
@@ -74,10 +74,3 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
     except Exception as e:
         print(f"Ошибка при формировании отчета: {e}")
         return pd.DataFrame()
-
-# # Пример использования
-# if __name__ == "__main__":
-#     input_file = os.path.abspath('../data/operations.xlsx')
-#     transactions_df = pd.read_excel(input_file)
-#     result = spending_by_category(transactions_df, "Фастфуд", "2021-10-15")
-#     print(result)
