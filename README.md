@@ -69,4 +69,14 @@ spending_by_category - функция для получения трат по з
 
 ## *Тестирование:*
 
-Для проверки корректности использования данных функций добавлены модули с тестами:
+Для проверки корректности всех функциональностей проекта добавлены модули с тестами в папке tests:
+
+1. test_views - тестирования модуля views
+2. test_services - тестирования модуля services
+3. test_reports - тестирование модуля reports
+4. test_greeting - тестирование функции get_greeting из модуля utils
+5. test_data_period - тестирование функции get_data_period из модуля utils
+6. test_cards_data - тестирование функции get_cards_data из модуля utils
+7. test_top_transactions - тестирование функции get_top_transactions из модуля utils
+8. test_currency - тестирование функции get_currency_rates из модуля utils
+9. test_stock - тестирование функции get_stock_prices из модуля utils

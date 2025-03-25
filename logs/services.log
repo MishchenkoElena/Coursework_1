@@ -1,0 +1,1 @@
+2025-03-23 12:40:27,917 - services.py - read_transactions_from_excel - INFO - Преобразуем DataFrame в список словарей

@@ -149,7 +149,7 @@ def get_currency_rates(user_settings_file):
     try:
         with open(user_settings_file) as f:
             user_settings = json.load(f)
-            user_currencies = user_settings["user_currencies"]
+            user_currencies = user_settings.get("user_currencies", [])
 
         for currency in user_currencies:
             logging.debug(f"Запрос курса для валюты: {currency}")
@@ -159,24 +159,27 @@ def get_currency_rates(user_settings_file):
                 response = requests.get(url_1, headers=headers)
                 response.raise_for_status()
 
-                rate = response.json().get("rates").get(currency)
+                # Добавляем проверку на None
+                data = response.json()
+                rates = data.get("rates")
+                if rates:
+                    rate = rates.get(currency)
+                else:
+                    rate = None
+
                 currency_rates.append({"currency": currency, "rate": rate})
 
-                logging.info(f"Успешно получен курс для {currency}: {rate}")
-
             except requests.RequestException as e:
-                logging.error(f"Ошибка при получении курса для {currency}: {e}")
+                print(f"Ошибка при получении курса для {currency}: {e}")
                 currency_rates.append({"currency": currency, "rate": None})
 
-        return currency_rates
-
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        logging.error(f"Ошибка при чтении файла настроек пользователя: {e}")
-        raise ValueError(f"Ошибка при чтении файла настроек пользователя: {e}")
+        print(f"Ошибка при чтении файла настроек пользователя: {e}")
+
+    return currency_rates
 
 
 def get_stock_prices(user_settings_file):
-    """Функция для вывода цен на акции"""
     stock_prices = []
     try:
         with open(user_settings_file) as f:
@@ -184,21 +187,29 @@ def get_stock_prices(user_settings_file):
             user_stocks = user_settings["user_stocks"]
 
             for stock in user_stocks:
-                logging.debug(f"Запрос цены для акций: {user_stocks}")
+                logging.debug(f"Запрос цены для акций: {stock}")
                 try:
                     apikey = os.getenv("API_KEY_2")
                     url_2 = f"https://financialmodelingprep.com/api/v3/quote-short/{stock}?apikey={apikey}"
                     response = requests.get(url_2)
                     response.raise_for_status()
                     data = response.json()
-                    price = round(data[0]["price"], 2)
-                    stock_prices.append({"stock": stock, "price": price})
 
-                    logging.info(f"Успешно получена цена для {stock}: цена для {stock}: {price}")
-                except requests.RequestException as e:
-                    logging.error(f"Ошибка при получении данных для {stock}: {e}")
+                    # Проверка, что данные не пустые и имеют правильный формат
+                    if isinstance(data, list) and data:
+                        price = round(data[0]["price"], 2)
+                        stock_prices.append({"stock": stock, "price": price})
+                    else:
+                        logging.warning(f"Некорректный формат данных для {stock}")
+                except (KeyError, IndexError):
+                    logging.error(f"Ошибка при получении цены для {stock}")
                     stock_prices.append({"stock": stock, "price": None})
-        return stock_prices
+                except requests.RequestException as e:
+                    logging.error(f"Ошибка запроса для {stock}: {e}")
+                    stock_prices.append({"stock": stock, "price": None})
 
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        raise ValueError(f"Ошибка при чтении файла настроек пользователя: {e}")
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        logging.error(f"Ошибка при работе с файлом настроек: {e}")
+        return []
+
+    return stock_prices
